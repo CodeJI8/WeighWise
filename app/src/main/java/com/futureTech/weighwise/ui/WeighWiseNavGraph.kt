@@ -8,8 +8,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.futureTech.weighwise.ui.home.HomeScreen
-import com.futureTech.weighwise.ui.wizard.WizardScreen
+import com.futureTech.weighwise.ui.journal.JournalScreen
 import com.futureTech.weighwise.ui.result.ResultScreen
+import com.futureTech.weighwise.ui.wizard.WizardScreen
 
 @Composable
 fun WeighWiseNavGraph(
@@ -26,6 +27,13 @@ fun WeighWiseNavGraph(
         composable("home") {
             HomeScreen(
                 onNewDecision = { navController.navigate("wizard") },
+                onDecisionClick = { id -> navController.navigate("result/$id") },
+                onOpenJournal = { navController.navigate("journal") }
+            )
+        }
+        composable("journal") {
+            JournalScreen(
+                onBack = { navController.navigateUp() },
                 onDecisionClick = { id -> navController.navigate("result/$id") }
             )
         }
