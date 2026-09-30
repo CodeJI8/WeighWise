@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.noboj.weighwise"
+    namespace = "com.futureTech.weighwise"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.noboj.weighwise"
+        applicationId = "com.futureTech.weighwise"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -26,6 +26,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
