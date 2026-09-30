@@ -3,8 +3,8 @@ package com.futureTech.weighwise.domain
 import com.futureTech.weighwise.data.CriterionEntity
 import com.futureTech.weighwise.data.OptionEntity
 import com.futureTech.weighwise.data.ScoreEntity
+import java.util.Locale
 import kotlin.math.pow
-import kotlin.random.Random
 
 data class OptionResult(
     val option: OptionEntity,
@@ -64,6 +64,51 @@ class ScoreCalculator {
         }
         
         return results.sortedByDescending { it.score }
+    }
+
+    fun generateWinningReason(
+        winner: OptionResult,
+        runnerUp: OptionResult?,
+        criteria: List<CriterionEntity>
+    ): String {
+        val criteriaMap = criteria.associateBy { it.id }
+        val winnerScores = winner.criterionScores
+        val runnerUpScores = runnerUp?.criterionScores ?: emptyMap()
+
+        // Find criteria where winner outperformed runner-up
+        val advantages = winnerScores.mapNotNull { (critId, score) ->
+            val runnerScore = runnerUpScores[critId] ?: 0f
+            val diff = score - runnerScore
+            val crit = criteriaMap[critId]
+            if (crit != null && diff > 0.01f) {
+                crit.name to diff
+            } else null
+        }.sortedByDescending { it.second }
+
+        // Find criteria where runner-up outperformed winner
+        val disadvantages = winnerScores.mapNotNull { (critId, score) ->
+            val runnerScore = runnerUpScores[critId] ?: 0f
+            val diff = runnerScore - score
+            val crit = criteriaMap[critId]
+            if (crit != null && diff > 0.01f) {
+                crit.name to diff
+            } else null
+        }.sortedByDescending { it.second }
+
+        return when {
+            advantages.isNotEmpty() && disadvantages.isNotEmpty() -> {
+                val topAdv = advantages.take(2).joinToString(" and ") { it.first.lowercase(Locale.ROOT) }
+                val topDis = disadvantages.first().first.lowercase(Locale.ROOT)
+                "Leads on $topAdv, despite lower $topDis."
+            }
+            advantages.isNotEmpty() -> {
+                val topAdv = advantages.take(2).joinToString(" and ") { it.first.lowercase(Locale.ROOT) }
+                "Leads strongly on $topAdv."
+            }
+            else -> {
+                "Overall highest weighted score across criteria."
+            }
+        }
     }
 }
 

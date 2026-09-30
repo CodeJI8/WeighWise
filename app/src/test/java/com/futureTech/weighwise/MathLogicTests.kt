@@ -56,6 +56,28 @@ class MathLogicTests {
         assertTrue(bResult.isEliminated)
         assertEquals("Failed must-have: C1", bResult.eliminationReason)
     }
+
+    @Test
+    fun testGenerateWinningReason() {
+        val calc = ScoreCalculator()
+        val opts = listOf(OptionEntity(1, 1, "Offer A", 0), OptionEntity(2, 1, "Offer B", 1))
+        val crits = listOf(
+            CriterionEntity(1, 1, "Growth", 5f, false),
+            CriterionEntity(2, 1, "Salary", 5f, false),
+            CriterionEntity(3, 1, "Commute", 2f, false)
+        )
+        val scores = listOf(
+            ScoreEntity(1, 1, 9f, true), ScoreEntity(1, 2, 8f, true), ScoreEntity(1, 3, 3f, true),
+            ScoreEntity(2, 1, 5f, true), ScoreEntity(2, 2, 6f, true), ScoreEntity(2, 3, 9f, true)
+        )
+        val results = calc.calculate(opts, crits, scores)
+        val winner = results[0]
+        val runnerUp = results[1]
+
+        val reason = calc.generateWinningReason(winner, runnerUp, crits)
+        assertTrue(reason.contains("growth") || reason.contains("salary"))
+        assertTrue(reason.contains("commute") || reason.contains("Leads"))
+    }
     
     @Test
     fun testTies() {
@@ -123,14 +145,6 @@ class MathLogicTests {
         // A is the winner
         
         val results = analyzer.analyze(opts, crits, scores, opts[0])
-        
-        // We expect C2 to be the most fragile, because increasing its weight helps B.
-        // B needs to beat A. S_B = S_A -> 8 * W_2 = 10 * W_1
-        // W_1 + W_2 = 1 (or whatever, weights are relative).
-        // Since we are changing W_2 and keeping W_1 fixed for the threshold calc, 
-        // W_2_new * 8 > 10 * 0.5 => W_2_new * 8 > 5 => W_2_new > 5/8 = 0.625
-        // Current W_2 is 0.5. Change is +0.125.
-        // 0.125 / 0.5 = +25% change needed in C2's weight.
         
         val c2Result = results.find { it.criterion.id == 2L }
         assertNotNull(c2Result)

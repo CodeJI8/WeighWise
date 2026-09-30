@@ -1,6 +1,11 @@
 package com.futureTech.weighwise.domain
 
-import com.futureTech.weighwise.data.*
+import com.futureTech.weighwise.data.CriterionEntity
+import com.futureTech.weighwise.data.DecisionDao
+import com.futureTech.weighwise.data.DecisionEntity
+import com.futureTech.weighwise.data.DecisionStatus
+import com.futureTech.weighwise.data.OptionEntity
+import com.futureTech.weighwise.data.ScoreEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,20 +29,20 @@ class WeighWiseRepository @Inject constructor(
     ): Long {
         // Since we need the generated IDs, we insert them sequentially
         val decisionId = decisionDao.insertDecision(decision)
-        
+
         val optionsWithId = options.map { it.copy(id = 0, decisionId = decisionId) }
         val optionIds = decisionDao.insertOptions(optionsWithId)
-        
+
         val criteriaWithId = criteria.map { it.copy(id = 0, decisionId = decisionId) }
         val criteriaIds = decisionDao.insertCriteria(criteriaWithId)
-        
+
         // Map temporary option/criterion IDs or indices to newly generated database IDs
         val scoresWithId = scores.mapNotNull { score ->
             val optionIndex = options.indexOfFirst { it.id != 0L && it.id == score.optionId }
                 .let { if (it != -1) it else score.optionId.toInt() }
             val criterionIndex = criteria.indexOfFirst { it.id != 0L && it.id == score.criterionId }
                 .let { if (it != -1) it else score.criterionId.toInt() }
-            
+
             if (optionIndex in optionIds.indices && criterionIndex in criteriaIds.indices) {
                 score.copy(
                     optionId = optionIds[optionIndex],
@@ -47,16 +52,20 @@ class WeighWiseRepository @Inject constructor(
                 null
             }
         }
-        
+
         decisionDao.insertScores(scoresWithId)
         return decisionId
     }
-    
+
     suspend fun updateGutPick(decisionId: Long, optionId: Long) {
         decisionDao.updateGutPick(decisionId, optionId)
     }
 
     suspend fun markDecided(decisionId: Long, finalOptionId: Long) {
         decisionDao.updateDecisionStatus(decisionId, DecisionStatus.DECIDED, finalOptionId)
+    }
+
+    suspend fun saveReview(decisionId: Long, satisfaction: Int, note: String?) {
+        decisionDao.saveReview(decisionId, System.currentTimeMillis(), satisfaction, note)
     }
 }
